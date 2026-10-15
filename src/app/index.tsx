@@ -1,98 +1,52 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { View, Text, Image, Pressable, StyleSheet, Alert, Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function Camara() {
+  const [foto, setFoto] = useState<string | null>(null);
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  const tomarFoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permiso denegado',
+        Platform.OS === 'ios'
+          ? 'Actívalo en Ajustes > PocketTools > Cámara.'
+          : 'Actívalo en Ajustes > Aplicaciones > PocketTools > Permisos.'
+      );
+      return;
+    }
+    const r = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!r.canceled) setFoto(r.assets[0].uri);
+  };
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <View style={s.container}>
+      <View style={s.card}>
+        {foto ? (
+          <Image source={{ uri: foto }} style={s.img} />
+        ) : (
+          <Text style={s.placeholder}>Aún no hay foto 📷</Text>
+        )}
+      </View>
+      <Pressable style={s.btn} onPress={tomarFoto}>
+        <Text style={s.btnText}>Tomar foto</Text>
+      </Pressable>
+    </View>
   );
 }
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+export const cardShadow = Platform.select({
+  ios: { shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
+  android: { elevation: 6 },
+});
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F5F6FA', alignItems: 'center', padding: 20 },
+  card: { width: '100%', height: 380, backgroundColor: '#fff', borderRadius: 20,
+    justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginTop: 10, ...cardShadow },
+  img: { width: '100%', height: '100%' },
+  placeholder: { color: '#999', fontSize: 16 },
+  btn: { backgroundColor: '#6C5CE7', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 30, marginTop: 24 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
